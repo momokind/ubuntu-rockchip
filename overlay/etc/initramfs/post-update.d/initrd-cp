@@ -6,8 +6,13 @@ version="$1"
 
 # passing the kernel version is required
 if [ -z "${version}" ]; then
-	echo >&2 "W: copy-initramfs: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
+	echo >&2 "W: initrd-cp: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
 	exit 2
+fi
+
+# Do not run inside an LXC container or chroot
+if systemd-detect-virt --quiet --container || systemd-detect-virt --quiet --chroot; then
+    exit 0
 fi
 
 # Ensure boot partition is mounted
@@ -21,7 +26,7 @@ if [[ $(findmnt -M /boot/firmware/ -n -o SOURCE) != "/dev/${partition_pkname}${p
     mount "/dev/${partition_pkname}${partition_char}1" /boot/firmware/
 fi
 
-cp "/boot/initrd.img-${ABI}" /boot/firmware/initrd.img
-cp "/boot/vmlinuz-${ABI}" /boot/firmware/vmlinuz
+cp "/boot/initrd.img-${version}" /boot/firmware/initrd.img
+cp "/boot/vmlinuz-${version}" /boot/firmware/vmlinuz
 
 sync

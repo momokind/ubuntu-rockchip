@@ -78,6 +78,11 @@ for type in $target; do
     mount -o bind /dev ${chroot_dir}/dev
     mount -o bind /dev/pts ${chroot_dir}/dev/pts
 
+mkdir -p ${chroot_dir}/etc/initramfs/post-update.d/
+cp ${overlay_dir}/etc/initramfs/post-update.d/initrd-cp ${chroot_dir}/etc/initramfs/post-update.d/initrd-cp
+cp ${overlay_dir}/etc/kernel/postinst.d/dtb-cp ${chroot_dir}/etc/kernel/postinst.d/dtb-cp
+cp ${overlay_dir}/etc/kernel/postrm.d/dtb-rm ${chroot_dir}/etc/kernel/postrm.d/dtb-rm
+
     # Board specific changes
     if [ "${BOARD}" == orangepi-5-plus ]; then
     {
@@ -223,11 +228,8 @@ for type in $target; do
     cp ${chroot_dir}/boot/vmlinuz-* ${chroot_dir}/boot/firmware/vmlinuz
 
     # Copy device trees and overlays for the boot partition
-    mkdir -p ${chroot_dir}/boot/firmware/dtbs/
-    cp -r ${chroot_dir}/usr/lib/linux-image-*/rockchip/* ${chroot_dir}/boot/firmware/dtbs/
-    if [ -d "${chroot_dir}/boot/firmware/dtbs/overlay/" ]; then
-        mv ${chroot_dir}/boot/firmware/dtbs/overlay/ ${chroot_dir}/boot/firmware/dtbs/overlays/
-    fi
+    mkdir -p ${chroot_dir}/boot/firmware/dtb/
+    cp -r ${chroot_dir}/usr/lib/linux-image-*/. ${chroot_dir}/boot/firmware/dtb/
 
     # Umount temporary API filesystems
     umount -lf ${chroot_dir}/dev/pts 2> /dev/null || true

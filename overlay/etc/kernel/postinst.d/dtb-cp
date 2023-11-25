@@ -6,8 +6,13 @@ version="$1"
 
 # passing the kernel version is required
 if [ -z "${version}" ]; then
-	echo >&2 "W: remove-dtb: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
+	echo >&2 "W: dtb-cp: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
 	exit 2
+fi
+
+# Do not run inside an LXC container unless explicitly asked
+if systemd-detect-virt --quiet --container || systemd-detect-virt --quiet --chroot; then
+    exit 0
 fi
 
 # Ensure boot partition is mounted
@@ -22,5 +27,6 @@ if [[ $(findmnt -M /boot/firmware/ -n -o SOURCE) != "/dev/${partition_pkname}${p
 fi
 
 rm -rf /boot/firmware/dtb/
+cp -r /usr/lib/linux-image-${version}/. /boot/firmware/dtb/
 
 sync
