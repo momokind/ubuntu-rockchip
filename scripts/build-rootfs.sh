@@ -179,9 +179,7 @@ cp ${overlay_dir}/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg ${chroot_dir}/etc/clou
 cp ${overlay_dir}/etc/adduser.conf ${chroot_dir}/etc/adduser.conf
 
 mkdir -p ${chroot_dir}/etc/initramfs/post-update.d/
-cp ${overlay_dir}/etc/initramfs/post-update.d/initrd-cp ${chroot_dir}/etc/initramfs/post-update.d/initrd-cp
-cp ${overlay_dir}/etc/kernel/postinst.d/dtb-cp ${chroot_dir}/etc/kernel/postinst.d/dtb-cp
-cp ${overlay_dir}/etc/kernel/postrm.d/dtb-rm ${chroot_dir}/etc/kernel/postrm.d/dtb-rm
+cp ${overlay_dir}/etc/initramfs/post-update.d/zz-update-firmware ${chroot_dir}/etc/initramfs/post-update.d/zz-update-firmware
 
 # Realtek 8811CU/8821CU usb modeswitch support
 cp ${chroot_dir}/lib/udev/rules.d/40-usb_modeswitch.rules ${chroot_dir}/etc/udev/rules.d/40-usb_modeswitch.rules

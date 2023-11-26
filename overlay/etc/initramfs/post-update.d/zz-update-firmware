@@ -1,12 +1,12 @@
-#!/bin/bash 
+#!/bin/sh 
 
 set -e
 
 version="$1"
 
-# passing the kernel version is required
+# Passing the kernel version is required
 if [ -z "${version}" ]; then
-	echo >&2 "W: initrd-cp: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
+	echo "ubuntu-rockchip: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
 	exit 2
 fi
 
@@ -18,14 +18,16 @@ fi
 # Ensure boot partition is mounted
 partition_root=$(findmnt -n -o SOURCE /)
 partition_pkname="$(lsblk -no pkname "${partition_root}")"
-partition_char=$(if [[ ${partition_pkname: -1} == [0-9] ]]; then echo p; fi)
+partition_char=$(if printf "%s" "${partition_pkname}" | tail -c 1 | grep -q '^[0-9]*$'; then echo p; fi)
 
-if [[ $(findmnt -M /boot/firmware/ -n -o SOURCE) != "/dev/${partition_pkname}${partition_char}1" ]]; then
+if [ "$(findmnt -M /boot/firmware/ -n -o SOURCE)" != "/dev/${partition_pkname}${partition_char}1" ]; then
     mkdir -p /boot/firmware/
     umount -lf /boot/firmware/ 2> /dev/null || true
     mount "/dev/${partition_pkname}${partition_char}1" /boot/firmware/
 fi
 
+rm -rf /boot/firmware/dtbs/
+cp -r /usr/lib/linux-image-${version}/. /boot/firmware/dtbs/
 cp "/boot/initrd.img-${version}" /boot/firmware/initrd.img
 cp "/boot/vmlinuz-${version}" /boot/firmware/vmlinuz
 
