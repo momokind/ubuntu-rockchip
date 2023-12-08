@@ -1,0 +1,72 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+include /usr/share/dpkg/pkg-info.mk
+
+ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+CROSS_COMPILE ?= $(DEB_HOST_GNU_TYPE)-
+endif
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+NJOBS := -j $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+else
+NJOBS := -j $(shell nproc)
+endif
+
+ROCKCHIP_TPL := rk3568_ddr_1560MHz_v1.18.bin 
+BL31_BLOB := rk3568_bl31_v1.43.elf
+
+BOARDS := radxa-zero3-rk3566
+
+${BOARDS}: 
+	@mkdir -p debian/build/$@
+
+	make O=debian/build/$@ \
+	  CROSS_COMPILE=$(CROSS_COMPILE) \
+	  ARCH=arm \
+	  $(NJOBS) \
+	  $@_defconfig
+
+	@touch .scmversion
+	@sed -i 's/CONFIG_LOCALVERSION=""/CONFIG_LOCALVERSION="-rockchip"/g' debian/build/$@/.config
+
+	make O=debian/build/$@ \
+	  CROSS_COMPILE=$(CROSS_COMPILE) \
+	  SOURCE_DATE_EPOCH=$(shell date +%s) \
+	  ARCH=arm \
+	  $(NJOBS) \
+	  BL31=../../../debian/rkbin/rk35/$(BL31_BLOB) \
+	  ROCKCHIP_TPL=../../../debian/rkbin/rk35/$(ROCKCHIP_TPL)
+
+build: ${BOARDS}
+
+binary-arch: $(addprefix package-,$(BOARDS))  
+
+binary: binary-arch
+
+package-%:
+	@rm -rf debian/tmp
+	@mkdir -m 755 -p debian/tmp/u-boot/usr/lib/u-boot/
+	@mkdir -m 755 -p debian/tmp/u-boot/usr/bin/
+
+	@cp debian/build/$(subst package-,,$@)/u-boot-rockchip.bin debian/tmp/u-boot/usr/lib/u-boot/u-boot-rockchip.bin
+	@cp debian/bin/u-boot-install debian/tmp/u-boot/usr/bin/u-boot-install
+	@if [ -f debian/build/$(subst package-,,$@)/u-boot-rockchip-spi.bin ]; then \
+		cp debian/build/$(subst package-,,$@)/u-boot-rockchip-spi.bin debian/tmp/u-boot/usr/lib/u-boot/u-boot-rockchip.bin; \
+		cp debian/bin/u-boot-install-mtd debian/tmp/u-boot/usr/bin/u-boot-install-mtd; \
+	fi
+
+	@mkdir -m 755 -p "debian/tmp/u-boot/DEBIAN"
+	@cp debian/preinst debian/tmp/u-boot/DEBIAN/preinst
+	@mkdir -p "debian/tmp/u-boot/usr/share/doc/u-boot"
+	@cp debian/copyright "debian/tmp/u-boot/usr/share/doc/u-boot"
+	@cp debian/changelog "debian/tmp/u-boot/usr/share/doc/u-boot/changelog.Debian"
+	@gzip -9 "debian/tmp/u-boot/usr/share/doc/u-boot/changelog.Debian"
+	@sh -c "cd 'debian/tmp/u-boot'; find . -type f ! -path './DEBIAN/*' -printf '%P\0' | xargs -r0 md5sum > DEBIAN/md5sums"
+	@chown -R root:root "debian/tmp/u-boot" && chmod -R go-w "debian/tmp/u-boot" && chmod -R a+rX "debian/tmp/u-boot"
+	@dpkg-gencontrol -pu-boot-$(subst -rk3566,,$(subst -rk3588,,$(subst -rk3588s,,$(subst _,-,$(subst package-,,$@))))) -P"debian/tmp/u-boot"
+	@dpkg --build "debian/tmp/u-boot" ..
+
+clean:
+	@rm -rf debian/*tmp debian/tmp debian/build debian/files
+	$(MAKE) clean
