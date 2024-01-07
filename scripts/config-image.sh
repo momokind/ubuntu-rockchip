@@ -48,6 +48,7 @@ fi
 unset TMP
 unset TEMP
 unset TMPDIR
+source ../config/kernels/bsp.conf
 
 # Prevent dpkg interactive dialogues
 export DEBIAN_FRONTEND=noninteractive
@@ -72,6 +73,11 @@ for type in $target; do
     mount -t sysfs /sys ${chroot_dir}/sys
     mount -o bind /dev ${chroot_dir}/dev
     mount -o bind /dev/pts ${chroot_dir}/dev/pts
+
+    # Run config hook to handle board specific changes
+    if [[ $(type -t config_image_hook__bsp) == function ]]; then
+        config_image_hook__bsp
+    fi
 
     # Run config hook to handle board specific changes
     if [[ $(type -t config_image_hook__"${BOARD}") == function ]]; then
