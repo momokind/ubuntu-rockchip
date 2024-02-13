@@ -92,8 +92,8 @@ mkdir -p ${mount_point}
 dd if=/dev/zero of="${disk}" count=4096 bs=512
 parted --script "${disk}" \
 mklabel gpt \
-mkpart primary fat32 16MiB 528MiB \
-mkpart primary ext4 528MiB 100%
+mkpart primary fat32 16MiB 20MiB \
+mkpart primary ext4 20MiB 100%
 
 # Create partitions
 {
@@ -133,9 +133,9 @@ boot_uuid=$(uuidgen | head -c8)
 root_uuid=$(uuidgen)
 
 # Create filesystems on partitions
-mkfs.vfat -i "${boot_uuid}" -F32 -n system-boot "${disk}${partition_char}1"
+mkfs.vfat -i "${boot_uuid}" -F32 -n CIDATA "${disk}${partition_char}1"
 dd if=/dev/zero of="${disk}${partition_char}2" bs=1KB count=10 > /dev/null
-mkfs.ext4 -U "${root_uuid}" -L writable "${disk}${partition_char}2"
+mkfs.ext4 -U "${root_uuid}" -L cloudimg-rootfs "${disk}${partition_char}2"
 
 # Mount partitions
 mkdir -p ${mount_point}/{system-boot,writable} 
@@ -149,64 +149,15 @@ tar -xpf "${rootfs}" -C ${mount_point}/writable
 [ -z "${img##*desktop*}" ] && bootargs="quiet splash plymouth.ignore-serial-consoles" || bootargs=""
 
 # Create fstab entries
-boot_uuid="${boot_uuid:0:4}-${boot_uuid:4:4}"
 mkdir -p ${mount_point}/writable/boot/firmware
 cat > ${mount_point}/writable/etc/fstab << EOF
 # <file system>     <mount point>  <type>  <options>   <dump>  <fsck>
-UUID=${boot_uuid^^} /boot/firmware vfat    defaults    0       2
 UUID=${root_uuid,,} /              ext4    defaults,x-systemd.growfs    0       1
 EOF
 
-# Uboot script
-cat > ${mount_point}/system-boot/boot.cmd << 'EOF'
-# This is a boot script for U-Boot
-#
-# Recompile with:
-# mkimage -A arm64 -O linux -T script -C none -n "Boot Script" -d boot.cmd boot.scr
-
-setenv load_addr "0x7000000"
-setenv overlay_error "false"
-
-echo "Boot script loaded from ${devtype} ${devnum}"
-
-if test -e ${devtype} ${devnum}:${distro_bootpart} /ubuntuEnv.txt; then
-    load ${devtype} ${devnum}:${distro_bootpart} ${load_addr} /ubuntuEnv.txt
-    env import -t ${load_addr} ${filesize}
-fi
-
-load ${devtype} ${devnum}:${distro_bootpart} ${fdt_addr_r} ${fdtfile}
-fdt addr ${fdt_addr_r} && fdt resize 0x10000
-
-for overlay_file in ${overlays}; do
-    for file in "${overlay_prefix}-${overlay_file}.dtbo ${overlay_prefix}-${overlay_file} ${overlay_file}.dtbo ${overlay_file}"; do
-        test -e ${devtype} ${devnum}:${distro_bootpart} /overlays/${file} \
-        && load ${devtype} ${devnum}:${distro_bootpart} ${fdtoverlay_addr_r} /overlays/${file} \
-        && echo "Applying device tree overlay: /overlays/${file}" \
-        && fdt apply ${fdtoverlay_addr_r} || setenv overlay_error "true"
-    done
-done
-if test "${overlay_error}" = "true"; then
-    echo "Error applying device tree overlays, restoring original device tree"
-    load ${devtype} ${devnum}:${distro_bootpart} ${fdt_addr_r} ${fdtfile}
-fi
-
-load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} /vmlinuz
-load ${devtype} ${devnum}:${distro_bootpart} ${ramdisk_addr_r} /initrd.img
-
-booti ${kernel_addr_r} ${ramdisk_addr_r}:${filesize} ${fdt_addr_r}
-EOF
-mkimage -A arm64 -O linux -T script -C none -n "Boot Script" -d ${mount_point}/system-boot/boot.cmd ${mount_point}/system-boot/boot.scr
-
 # Uboot env
-cat > ${mount_point}/system-boot/ubuntuEnv.txt << EOF
-bootargs=root=UUID=${root_uuid} rootfstype=ext4 rootwait rw console=ttyS2,1500000 console=tty1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory swapaccount=1 systemd.unified_cgroup_hierarchy=0 ${bootargs}
-fdtfile=${DEVICE_TREE_FILE}
-overlay_prefix=${OVERLAY_PREFIX}
-overlays=
-EOF
-
-# Copy the device trees, kernel, and initrd to the boot partition
-mv ${mount_point}/writable/boot/firmware/* ${mount_point}/system-boot/
+echo "rootfstype=ext4 rootwait rw console=ttyS2,1500000 console=tty1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory swapaccount=1 systemd.unified_cgroup_hierarchy=0 ${bootargs}" > ${mount_point}/writable/etc/kernel/cmdline
+chroot ${mount_point}/writable/ /bin/bash -c "u-boot-update"
 
 # Write bootloader to disk image
 if [ -f "${mount_point}/writable/usr/lib/u-boot/u-boot-rockchip.bin" ]; then

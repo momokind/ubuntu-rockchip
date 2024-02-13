@@ -120,10 +120,18 @@ else
     chroot ${chroot_dir} /bin/bash -c "apt-mark hold $(echo "${linux_headers_package}" | sed -rn 's/(.*)_[[:digit:]].*/\1/p')"
 fi
 
-# Populate the boot firmware path
-umount -lf ${chroot_dir}/sys
-mkdir -p ${chroot_dir}/boot/firmware
-chroot ${chroot_dir} /bin/bash -c "FK_FORCE=yes flash-kernel"
+chroot ${chroot_dir} /bin/bash -c "apt-get -y install u-boot-menu"
+chroot ${chroot_dir} /bin/bash -c "apt-get -y purge flash-kernel"
+
+touch ${chroot_dir}/etc/kernel/cmdline
+mkdir -p  ${chroot_dir}/usr/share/u-boot-menu/conf.d/
+cat > ${chroot_dir}/usr/share/u-boot-menu/conf.d/ubuntu-rockchip.conf << EOF
+U_BOOT_PROMPT="1"
+U_BOOT_TIMEOUT="10"
+U_BOOT_PARAMETERS="\$(cat /etc/kernel/cmdline)"
+U_BOOT_FDT="rockchip/${DEVICE_TREE_FILE}"
+U_BOOT_FDT_DIR="/usr/lib/linux-image-"
+EOF
 
 # Clean package cache
 chroot ${chroot_dir} apt-get -y autoremove

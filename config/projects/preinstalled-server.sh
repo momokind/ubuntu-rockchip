@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 
 package_list=(
-    i2c-tools u-boot-tools mmc-utils flash-kernel wpasupplicant linux-firmware psmisc wireless-regdb
+    i2c-tools u-boot-tools mmc-utils wpasupplicant linux-firmware psmisc wireless-regdb
     cloud-init landscape-common cloud-initramfs-growroot
 )
 
@@ -56,15 +56,6 @@ function build_rootfs_hook__preinstalled-server() {
     rm -f "${chroot_dir}/var/lib/dbus/machine-id"
     true > "${chroot_dir}/etc/machine-id"
 
-    # Flash kernel override
-    (
-        echo "Machine: *"
-        echo "Kernel-Flavors: any"
-        echo "Method: pi"
-        echo "Boot-Kernel-Path: /boot/firmware/vmlinuz"
-        echo "Boot-Initrd-Path: /boot/firmware/initrd.img"
-    ) > "${chroot_dir}/etc/flash-kernel/db"
-
     # Create swapfile on boot
     mkdir -p "${chroot_dir}/usr/lib/systemd/system/swap.target.wants/"
     (
@@ -110,13 +101,13 @@ function build_rootfs_hook__preinstalled-server() {
         echo "ff02::3 ip6-allhosts"
     ) > "${chroot_dir}/etc/hosts"
 
-    # Cloud init no cloud config
+    # Cloud init no cloud conf<ig
     (
         echo "# configure cloud-init for NoCloud"
         echo "datasource_list: [ NoCloud, None ]"
         echo "datasource:"
         echo "  NoCloud:"
-        echo "    fs_label: system-boot"
+        echo "    fs_label: CIDATA"
     ) > "${chroot_dir}/etc/cloud/cloud.cfg.d/99-fake_cloud.cfg"
 
     # HACK: lower 120 second timeout to 10 seconds

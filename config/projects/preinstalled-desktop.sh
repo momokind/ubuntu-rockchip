@@ -2,8 +2,7 @@
 
 package_list=(
     oem-config-gtk ubiquity-frontend-gtk ubiquity-slideshow-ubuntu language-pack-en-base mpv dbus-x11
-    i2c-tools u-boot-tools mmc-utils flash-kernel wpasupplicant linux-firmware psmisc wireless-regdb
-    cloud-initramfs-growroot
+    i2c-tools u-boot-tools mmc-utils wpasupplicant linux-firmware psmisc wireless-regdb cloud-initramfs-growroot
 )
 
 package_removal_list=(
@@ -71,15 +70,6 @@ function build_rootfs_hook__preinstalled-desktop() {
     # Let systemd create machine id on first boot
     rm -f "${chroot_dir}/var/lib/dbus/machine-id"
     true > "${chroot_dir}/etc/machine-id"
-
-    # Flash kernel override
-    (
-        echo "Machine: *"
-        echo "Kernel-Flavors: any"
-        echo "Method: pi"
-        echo "Boot-Kernel-Path: /boot/firmware/vmlinuz"
-        echo "Boot-Initrd-Path: /boot/firmware/initrd.img"
-    ) > "${chroot_dir}/etc/flash-kernel/db"
 
     # Create swapfile on boot
     mkdir -p "${chroot_dir}/usr/lib/systemd/system/swap.target.wants/"
