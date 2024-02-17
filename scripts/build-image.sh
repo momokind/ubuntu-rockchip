@@ -102,7 +102,7 @@ mkpart primary ext4 20MiB 100%
     echo "BC13C2FF-59E6-4262-A352-B275FD6F7172"
     echo "t"
     echo "2"
-    echo "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
+    echo "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
     echo "w"
 } | fdisk "${disk}" &> /dev/null || true
 
