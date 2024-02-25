@@ -7,13 +7,31 @@ package_list=(
 )
 
 package_removal_list=(
-    cryptsetup-initramfs
+    cryptsetup-initramfs firefox cloud-init
 )
 
 function build_rootfs_hook__preinstalled-desktop() {
     local task
     local package
     declare -g chroot_dir
+
+    # HACK: systemd fails to install on noble, 
+    if [[ ${RELEASE} == "noble" ]]; then
+        set +e
+        chroot "${chroot_dir}" apt-get install -y systemd 
+        set -eE
+        chroot "${chroot_dir}" /bin/bash -c "cd /bin && mv -f systemd-sysusers{,.org} && ln -s echo systemd-sysusers && cd -"
+        chroot "${chroot_dir}" dpkg --configure -a
+        chroot "${chroot_dir}" apt-get install -y systemd 
+
+        set +e
+        chroot "${chroot_dir}" apt-get install -y polkitd 
+        set -eE
+        chroot "${chroot_dir}" /bin/bash -c "/usr/sbin/useradd -G adm,sudo -m -N -u 2999 polkitd"
+        chroot "${chroot_dir}" /bin/bash -c "groupadd polkitd"
+        chroot "${chroot_dir}" dpkg --configure -a
+        chroot "${chroot_dir}" apt-get install -y polkitd 
+    fi
 
     # Query list of default ubuntu packages
     for task in minimal standard ubuntu-desktop; do

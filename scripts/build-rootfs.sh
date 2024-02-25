@@ -55,7 +55,16 @@ rm -rf ${chroot_dir}
 mkdir -p ${chroot_dir}
 
 # Install the base system into a directory 
-debootstrap --arch "${arch}" "${release}" "${chroot_dir}" "${mirror}"
+if [[ ${RELEASE} == "jammy" ]]; then
+    debootstrap --arch "${arch}" "${release}" "${chroot_dir}" "${mirror}"
+else
+    wget http://www.cdimage.ubuntu.com/ubuntu-base/daily/current/noble-base-arm64.tar.gz
+    mv noble-base-arm64.tar.gz ${chroot_dir}
+    cd ${chroot_dir}
+    tar -xf noble-base-arm64.tar.gz
+    rm noble-base-arm64.tar.gz
+    cd ..
+fi
 
 # Use a more complete sources.list file 
 cat > ${chroot_dir}/etc/apt/sources.list << EOF
@@ -111,16 +120,24 @@ mount -o bind /dev ${chroot_dir}/dev
 mount -o bind /dev/pts ${chroot_dir}/dev/pts
 
 # Update localisation files
-chroot ${chroot_dir} locale-gen en_US.UTF-8
-chroot ${chroot_dir} update-locale LANG="en_US.UTF-8"
+if [[ ${RELEASE} == "jammy" ]]; then
+    chroot ${chroot_dir} locale-gen en_US.UTF-8
+    chroot ${chroot_dir} update-locale LANG="en_US.UTF-8"
+else
+    rm ${chroot_dir}/etc/apt/sources.list.d/ubuntu.sources
+fi
 
 # Download and update installed packages
 chroot ${chroot_dir} apt-get -y update
 chroot ${chroot_dir} apt-get -y upgrade 
 chroot ${chroot_dir} apt-get -y dist-upgrade
-chroot ${chroot_dir} apt-get -y install dctrl-tools
+chroot ${chroot_dir} apt-get -y install dctrl-tools locales
 
-cp ${overlay_dir}/etc/adduser.conf ${chroot_dir}/etc/adduser.conf
+# Update localisation files
+if [[ ${RELEASE} == "noble" ]]; then
+    chroot ${chroot_dir} locale-gen en_US.UTF-8
+    chroot ${chroot_dir} update-locale LANG="en_US.UTF-8"
+fi
 
 # Run build rootfs hook to handle project specific changes
 if [[ $(type -t build_rootfs_hook__"${PROJECT}") == function ]]; then
