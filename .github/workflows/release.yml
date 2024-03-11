@@ -91,6 +91,7 @@ jobs:
           - roc-rk3588s-pc
           - armsom-sige7
           - armsom-w3
+          - z96a
 
     steps:
       - name: Get more disk space

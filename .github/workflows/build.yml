@@ -152,6 +152,7 @@ jobs:
           - turing-rk1
           - armsom-sige7
           - armsom-w3
+          - z96a
         project:
           - preinstalled-desktop
           - preinstalled-server
