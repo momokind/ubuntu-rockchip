@@ -108,7 +108,7 @@ Pin: release o=LP-PPA-jjriek-panfork-mesa
 Pin-Priority: 1001
 EOF
                 chroot ${chroot_dir} /bin/bash -c "add-apt-repository -y ppa:jjriek/panfork-mesa"  
-                chroot ${chroot_dir} /bin/bash -c "add-apt-repository -y ppa:jjriek/noble"  
+                chroot ${chroot_dir} /bin/bash -c "add-apt-repository -y ppa:jjriek/rockchip-multimedia"  
             fi
 
             # Set cpu governor to performance
