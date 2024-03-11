@@ -196,7 +196,8 @@ mkdir -p ${chroot_dir}/etc/systemd/system/systemd-networkd-wait-online.service.d
 cp ${overlay_dir}/etc/systemd/system/systemd-networkd-wait-online.service.d/override.conf ${chroot_dir}/etc/systemd/system/systemd-networkd-wait-online.service.d/override.conf
 
 # Use gzip compression for the initrd
-cp ${overlay_dir}/etc/initramfs-tools/conf.d/compression.conf ${chroot_dir}/etc/initramfs-tools/conf.d/compression.conf
+mkdir -p ${chroot_dir}/etc/initramfs-tools/conf.d/
+echo "COMPRESS=gzip" > ${chroot_dir}/etc/initramfs-tools/conf.d/compression.conf
 
 # Disable terminal ads
 sed -i 's/ENABLED=1/ENABLED=0/g' ${chroot_dir}/etc/default/motd-news
@@ -207,7 +208,7 @@ sed -i 's/enabled=1/enabled=0/g' ${chroot_dir}/etc/default/apport
 
 # Remove release upgrade motd
 rm -f ${chroot_dir}/var/lib/ubuntu-release-upgrader/release-upgrade-available
-cp ${overlay_dir}/etc/update-manager/release-upgrades ${chroot_dir}/etc/update-manager/release-upgrades
+sed -i 's/Prompt=.*/Prompt=never/g' ${chroot_dir}/etc/update-manager/release-upgrades
 
 # Copy over the ubuntu rockchip install util
 cp ${overlay_dir}/usr/bin/ubuntu-rockchip-install ${chroot_dir}/usr/bin/ubuntu-rockchip-install
@@ -283,14 +284,19 @@ if [[ ${RELEASE} == "jammy" ]]; then
 
     # Ubuntu desktop uses a diffrent network manager, so remove this systemd override
     rm -rf ${chroot_dir}/etc/systemd/system/systemd-networkd-wait-online.service.d/override.conf
+else
+    mkdir -p ${chroot_dir}/etc/wireplumber/main.lua.d/
+    cp ${overlay_dir}/etc/wireplumber/main.lua.d/51-alsa-custom.lua ${chroot_dir}/etc/wireplumber/main.lua.d/51-alsa-custom.lua
 fi
 
 # Enable wayland session
-cp ${overlay_dir}/etc/gdm3/custom.conf ${chroot_dir}/etc/gdm3/custom.conf
+sed -i 's/#WaylandEnable=false/WaylandEnable=true/g' ${chroot_dir}/etc/gdm3/custom.conf
 
 # Have plymouth use the framebuffer
 mkdir -p ${chroot_dir}/etc/initramfs-tools/conf-hooks.d
-cp ${overlay_dir}/etc/initramfs-tools/conf-hooks.d/plymouth ${chroot_dir}/etc/initramfs-tools/conf-hooks.d/plymouth
+echo "if which plymouth >/dev/null 2>&1; then" > ${chroot_dir}/etc/initramfs-tools/conf-hooks.d/plymouth
+echo "    FRAMEBUFFER=y" >> ${chroot_dir}/etc/initramfs-tools/conf-hooks.d/plymouth
+echo "fi" >> ${chroot_dir}/etc/initramfs-tools/conf-hooks.d/plymouth
 
 # Mouse lag/stutter (missed frames) in Wayland sessions
 # https://bugs.launchpad.net/ubuntu/+source/mutter/+bug/1982560
