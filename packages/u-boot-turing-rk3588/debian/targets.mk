@@ -17,6 +17,6 @@ radxa-zero3-rk3566_bl31 := rk3568_bl31_v1.43.elf
 radxa-zero3-rk3566_pkg := radxa-zero3
 
 u-boot-rockchip_platforms += z96a-rk3568
-z96a-rk3568 := rk3568_ddr_1560MHz_v1.18.bin
+z96a-rk3568_ddr := rk3568_ddr_1560MHz_v1.18.bin
 z96a-rk3568_bl31 := rk3568_bl31_v1.43.elf
 z96a-rk3568_pkg := sunniwell-z96a
