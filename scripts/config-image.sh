@@ -162,7 +162,7 @@ EOF
             else
                 if [[ ${RELEASE} == "jammy" ]]; then
                     chroot ${chroot_dir} /bin/bash -c "apt-get install rockchip-multimedia-config"
-                    chroot ${chroot_dir} /bin/bash -c "apt-get install -y ffmpeg chromium-browser{,-l10n} chromium-codecs-ffmpeg chromium-codecs-ffmpeg-extra libwidevinecdm librockchip-mpp1 librockchip-mpp-dev librockchip-vpu0 libv4l-rkmpp librist-dev librist4 librga2 librga-dev rist-tools rockchip-mpp-demos gstreamer1.0-rockchip1 mpv"
+                    chroot ${chroot_dir} /bin/bash -c "apt-get install -y ffmpeg chromium-browser{,-l10n} chromium-codecs-ffmpeg-extra libwidevinecdm librockchip-mpp1 librockchip-mpp-dev librockchip-vpu0 libv4l-rkmpp librist-dev librist4 librga2 librga-dev rist-tools rockchip-mpp-demos gstreamer1.0-rockchip1 mpv"
                 fi
             fi
             set +e
