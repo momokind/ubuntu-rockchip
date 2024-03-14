@@ -118,6 +118,11 @@ EOF
             # Set gpu governor to performance
             cp ${overlay_dir}/usr/lib/systemd/system/gpu-governor-performance.service ${chroot_dir}/usr/lib/systemd/system/gpu-governor-performance.service
             chroot ${chroot_dir} /bin/bash -c "systemctl enable gpu-governor-performance"
+        else
+            if [[ ${RELEASE} == "jammy" ]]; then
+                cp ${overlay_dir}/etc/apt/preferences.d/rockchip-multimedia-ppa ${chroot_dir}/etc/apt/preferences.d/rockchip-multimedia-ppa
+                chroot ${chroot_dir} /bin/bash -c "add-apt-repository -y ppa:liujianfeng1994/rockchip-multimedia"
+            fi
         fi
 
         # Download and update installed packages
@@ -153,6 +158,11 @@ EOF
                     chroot ${chroot_dir} /bin/bash -c "apt-get --allow-downgrades -y install libwidevinecdm librockchip-mpp1 librockchip-mpp-dev librockchip-vpu0 libv4l-rkmpp librist-dev librist4 librga2 librga-dev rist-tools rockchip-mpp-demos rockchip-multimedia-config gstreamer1.0-rockchip1 chromium-browser mali-g610-firmware malirun"
                 else
                     chroot ${chroot_dir} /bin/bash -c "apt-get --allow-downgrades -y install librockchip-mpp1 librockchip-mpp-dev librockchip-vpu0 libv4l-rkmpp librist-dev librist4 librga2 librga-dev rist-tools rockchip-mpp-demos rockchip-multimedia-config chromium-browser mali-g610-firmware malirun"
+                fi
+            else
+                if [[ ${RELEASE} == "jammy" ]]; then
+                    chroot ${chroot_dir} /bin/bash -c "apt-get install rockchip-multimedia-config"
+                    chroot ${chroot_dir} /bin/bash -c "apt-get install -y ffmpeg chromium-browser{,-l10n} chromium-codecs-ffmpeg chromium-codecs-ffmpeg-extra libwidevinecdm librockchip-mpp1 librockchip-mpp-dev librockchip-vpu0 mpp libv4l-rkmpp librist-dev librist4 librga2 librga-dev rist-tools rockchip-mpp-demos gstreamer1.0-rockchip1 mpv"
                 fi
             fi
             set +e
