@@ -132,7 +132,7 @@ jobs:
     strategy:
       matrix:
         board:
-          - z96a
+          - sunniwell-z96a
         project:
           - preinstalled-desktop
           - preinstalled-server
