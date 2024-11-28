@@ -144,6 +144,7 @@ jobs:
           - rock-5c
           - rock-5d
           - turing-rk1
+          - cybercat-5
         flavor:
           - desktop
           - server
